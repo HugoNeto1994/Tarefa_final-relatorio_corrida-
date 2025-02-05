@@ -188,9 +188,14 @@ def criar_equipa_formula():
     equipas_formula.append(formula1)
     
     return equipas_formula
+
+def imprimir_ficheiro(mensagem):
+    ficheiro = open('relatorio_corrida.txt', 'w')
+    ficheiro.write(mensagem)
+    ficheiro.close()
     
 
-print("Olá, bem vindo ao centro dos desportos motorizados")
+print("\nOlá, bem vindo ao centro dos desportos motorizados\n")
 
 escolha = int(input("Indique o desporto que pretende seguir:\n 1 - MotoGP \n 2 - Formula 1\n"))
 
@@ -253,7 +258,7 @@ def escolher_pista():
                 print("⚠️ Número fora do intervalo! Escolha uma pista válida.")
         
         elif pista_escolhida.lower() == "s":
-            break
+            return "s"
         else:
             "Opção inválida, insira uma opção válida"
             
@@ -276,6 +281,9 @@ def simular_corrida(equipas, pista, numero_voltas, mensagem, campeonato):
     tempos_de_volta = {}
     melhor_volta = float('inf') 
     melhor_volta_carro = ""
+    
+    if not campeonato:
+        mensagem += (f"Bem vindo ao Grande Prémio {pista.nome}\n")
     
     for i in equipas:
         i.ativo = True
@@ -366,6 +374,8 @@ def simular_corrida(equipas, pista, numero_voltas, mensagem, campeonato):
         elif posicao == 4:
             carro.pontuacao = 1   # 5º lugar
             carro.pontuacaoTotal +=1
+        else:
+            carro.pontuacao = 0
 
     # Atribui bônus de 1 ponto para o carro com a melhor volta
     if melhor_volta_carro:
@@ -377,11 +387,14 @@ def simular_corrida(equipas, pista, numero_voltas, mensagem, campeonato):
     if not campeonato:
      mensagem += (f"\n🏁 Pontuação Final Grande prémio {pista.nome}:\n")
      for carro in equipas:
-        mensagem += (f"{carro.nome}: {carro.pontuacao} pontos ------ Tempo: {formatar_tempo(sum(tempos_de_volta[carro.nome]))}\n")
+        if carro.ativo:
+            mensagem += (f"{carro.nome:<10} |Pontos: {carro.pontuacao:<3} | Tempo: {formatar_tempo(sum(tempos_de_volta[carro.nome]))}\n")
+        else:
+            mensagem += (f"{carro.nome:<10} |Pontos: {carro.pontuacao:<3} | ❌ {carro.nome} não terminou\n")
     else:
         mensagem += (f"\n🏁 Pontuação Final Grande prémio {pista.nome}:\n")
         for carro in equipas:
-           mensagem += (f"{carro.nome}: {carro.pontuacao} pontos\n")
+           mensagem += (f"{carro.nome:<10} |Pontos: {carro.pontuacao:<3}\n")
            
     return mensagem
 
@@ -389,7 +402,7 @@ pistas = []
 qatar = Pista("Qatar", 5.38, 0.01, 0.005)
 monaco = Pista("Monaco", 3.34, 0.1, 0.01)
 spa = Pista("Spa-Francorchamps", 7, 0.15, 0.008)
-brasil = Pista("Brasil", 4.31, 0.35, 0.01)
+brasil = Pista("Brasil", 4.31, 0.65, 0.01)
 pistas.append(qatar)
 pistas.append(monaco)
 pistas.append(spa)
@@ -398,25 +411,31 @@ pistas.append(brasil)
  
 equipa_escolhida = equipa()
 numero_pista = escolher_pista()
-numero_voltas = numero_voltas()
 
-if numero_pista != 0:
-    pista = pistas[numero_pista-1]
-    campeonato = False
-    mensagem = simular_corrida(equipa_escolhida, pista, numero_voltas, mensagem, campeonato)
-    print(mensagem)
-else:
-    for i in pistas:
-      campeonato = True
-      mensagem += simular_corrida(equipa_escolhida, i, numero_voltas, "", campeonato) 
-    mensagem += ("\n🏁 Pontuação Final do campeonato:\n")
-    for carro in equipa_escolhida:
-          mensagem += (f"{carro.nome}: {carro.pontuacaoTotal} pontos\n")  
-    print(mensagem)
+
+if  numero_pista == "s": 
+    print("Até uma próxima!")
+else:    
+    if numero_pista != 0:
+        numero_voltas = numero_voltas()
+        pista = pistas[numero_pista-1]
+        campeonato = False
+        mensagem = simular_corrida(equipa_escolhida, pista, numero_voltas, mensagem, campeonato)
+        print(mensagem)
+        imprimir_ficheiro(mensagem)
+    elif numero_pista == 0:
+        numero_voltas = numero_voltas()
+        for i in pistas:
+            campeonato = True
+            mensagem += simular_corrida(equipa_escolhida, i, numero_voltas, "", campeonato) 
+        mensagem += ("\n🏁 Pontuação Final do campeonato:\n")
+        for carro in equipa_escolhida:
+          mensagem += (f"{carro.nome:<10} |Pontos: {carro.pontuacaoTotal<3}\n")  
+        print(mensagem)
+        imprimir_ficheiro(mensagem)
+
     
-ficheiro = open('relatorio_corrida.txt', 'w')
-ficheiro.write(mensagem)
-ficheiro.close()
+
         
     
 
