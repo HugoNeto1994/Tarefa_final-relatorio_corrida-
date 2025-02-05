@@ -1,0 +1,5 @@
+Ducati, 320, 2
+Yamaha, 318, 2
+KTM, 312, 2
+Honda, 317, 2
+Suzuki, 315, 2
