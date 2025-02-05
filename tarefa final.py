@@ -9,12 +9,15 @@ from abc import ABC, abstractmethod
 
 import random
 
-
+mensagem =""
 class Veiculo(ABC):
     def __init__(self, nome,  velocidade_Max, numero_pneus):
         self.__velocidade_Max = float(velocidade_Max)
         self.__numero_pneus = numero_pneus
         self.__nome = nome
+        self.__ativo = True
+        self.__pontuacao = 0
+        self.__pontuacaoTotal = 0
 
     @property
     def nome(self):
@@ -40,6 +43,30 @@ class Veiculo(ABC):
     def numero_pneus(self, numero_pneus):
         self.__numero_pneus = numero_pneus
     
+    @property
+    def ativo(self):
+        return self.__ativo
+        
+    @ativo.setter
+    def ativo(self, ativo):
+        self.__ativo = ativo
+        
+    @property
+    def pontuacao(self):
+        return self.__pontuacao
+        
+    @pontuacao.setter
+    def pontuacao(self, pontuacao):
+        self.__pontuacao = pontuacao
+
+    @property
+    def pontuacaoTotal(self):
+        return self.__pontuacaoTotal
+        
+    @pontuacaoTotal.setter
+    def pontuacaoTotal(self, pontuacaoTotal):
+        self.__pontuacaoTotal = pontuacaoTotal
+    
     @abstractmethod
     def velocidade_media():
         pass
@@ -51,8 +78,7 @@ class Veiculo(ABC):
 class Moto(Veiculo):
     def __init__(self,nome,  velocidade_Max, numero_pneus):
         super().__init__(nome, velocidade_Max, numero_pneus)
-        self.ativo = True
-        self.pontuacao = 0
+
         
     def velocidade_media(self):
         velocidade_media = self.velocidade_Max*0.65
@@ -65,8 +91,6 @@ class Moto(Veiculo):
 class Formula(Veiculo):
     def __init__(self, nome, velocidade_Max, numero_pneus):
         super().__init__(nome, velocidade_Max, numero_pneus)
-        self.ativo = True
-        self.pontuacao = 0
         
     def velocidade_media(self):
         velocidade_media = self.velocidade_Max*0.75
@@ -117,10 +141,10 @@ class Pista():
     
 
 def pit_stop():
-    tempo = random.randint(25, 20)
+    tempo = random.randint(20, 25)
     return tempo
         
-    
+ 
         
 
 def criar_equipa_moto():
@@ -154,7 +178,7 @@ def criar_equipa_formula():
         nome = input("Indique o nome da equipa: ")
         
         # Verifica se já existe uma equipa com esse nome
-        if any(equipa.nome == nome for equipa in equipas_formula):
+        if any(equipa.nome.lower() == nome.strip().lower() for equipa in equipas_formula):
             print("⚠️ Já existe uma equipa com esse nome! Tente novamente.")
         else:
             break
@@ -172,23 +196,23 @@ escolha = int(input("Indique o desporto que pretende seguir:\n 1 - MotoGP \n 2 -
 
 def equipa():
  equipa = []
- equipa_formula = []
  if escolha == 1:
      escolha_ficheiro = int(input("1 - Criar equipas \n2 - Carregar um ficheiro"))
-     try: 
-         if escolha_ficheiro == 1:
+     if escolha_ficheiro == 2:
+         try: 
              ficheiro_moto = open('dados_motos.txt', 'r')
              for linha in ficheiro_moto:
                  linha = linha.strip()
                  if linha:
                      nome, velocidade, pneu = linha.split(',')
-                     equipa = Moto(nome, velocidade, pneu)
-                     equipa_motos.append(equipa)
-            return equipa_motos
+                     moto = Moto(nome, velocidade, pneu)
+                     equipa.append(moto)
+         except:
+              print("Ficheiro não existe ou não foi lido corretamente")
+              equipa = criar_equipa_moto()
         
      else:
-        equipa_motos = criar_equipa_moto()
-        return equipa_motos
+        equipa = criar_equipa_moto()
         
  else:
     escolha_ficheiro = int(input("1 - Criar equipas \n2 - Carregar um ficheiro"))
@@ -199,23 +223,20 @@ def equipa():
                 linha = linha.strip()
                 if linha:
                     nome, velocidade, pneu = linha.split(',')
-                    equipa = Formula(nome, velocidade, pneu)
-                    equipa_formula.append(equipa)
-                
-                return equipa_formula
+                    carro = Formula(nome, velocidade, pneu)
+                    equipa.append(carro)
         except:
             print("Ficheiro não existe ou não foi lido corretamente")
-            equipa_formula = criar_equipa_formula()
-            return equipa_formula
-    else escolha_ficheiro == 1:
-        equipa_formula = criar_equipa_formula()
-        return equipa_formula
-        
+            equipa = criar_equipa_formula()
+            
+    else:
+        equipa = criar_equipa_formula()
+ return equipa   
 
 def escolher_pista():
     
     while True:
-        for index, pista in enumerate(pistas):
+        for index, pista in enumerate(pistas, start=1):
             print(index, pista.nome)
     
         pista_escolhida = input("Indique o número da pista que pretende correr ou digite 0 para realizar um campeonato!\n s- sair")
@@ -223,7 +244,7 @@ def escolher_pista():
         if pista_escolhida.isdigit():
             pista_escolhida = int(pista_escolhida)
             
-            if 0 <= pista_escolhida < len(pistas):
+            if 1 <= pista_escolhida < len(pistas)+1:
                 return pista_escolhida
             elif pista_escolhida == 0:
                 print("🏆 Iniciando campeonato...")
@@ -244,20 +265,33 @@ def numero_voltas():
             return numero_voltas
         else:
             print("Numero inválido, insira um número entre 20 e 40")
+
+def formatar_tempo(tempo_em_min):
+    tempo_em_segundos = tempo_em_min * 60  
+    minutos, segundos = divmod(tempo_em_segundos, 60)  
+    return f"{int(minutos)} min {segundos:.2f} s"  
+
             
-def simular_corrida(equipas, pista, numero_voltas):
+def simular_corrida(equipas, pista, numero_voltas, mensagem, campeonato):
     tempos_de_volta = {}
-    melhor_volta = float('inf')  # Inicia com infinito para encontrar a menor volta
+    melhor_volta = float('inf') 
     melhor_volta_carro = ""
+    
+    for i in equipas:
+        i.ativo = True
+        i.pontuacao = 0
     
     # Verifica se choveu
     choveu = random.random() < pista.probabilidade_chuva
-    if choveu:
-        print(f"🌧️ Chove no grande prêmio do {pista.nome}")
+    if choveu and not campeonato:
+        mensagem +=(f"🌧️ Chove no grande prêmio do {pista.nome}\n")
 
     # Inicializa o dicionário de tempos de volta para cada carro
     for carro in equipas:
         tempos_de_volta[carro.nome] = []
+
+    # Dicionário para armazenar os tempos de cada carro por volta
+    tempos_por_volta = {volta: [] for volta in range(1, numero_voltas + 1)}
 
     # Simulação de voltas
     for carro in equipas:
@@ -278,74 +312,112 @@ def simular_corrida(equipas, pista, numero_voltas):
 
         for volta in range(1, numero_voltas + 1):
             if random.random() < probabilidade:
-                print(f"❌ {carro.nome} perdeu o controle e está FORA da corrida!")
-                carro.ativo = False
-                break  # Sai do loop de voltas se o carro não estiver mais ativo
+                if not campeonato:
+                 mensagem +=(f"❌ {carro.nome} perdeu o controle e está FORA da corrida!\n")
+                 carro.ativo = False
+                 break  # Sai do loop de voltas se o carro não estiver mais ativo
             
             # Calcula o tempo da volta
-            tempo_volta = (pista.comprimento / random.randint(velocidade_media_minima, velocidade_media))
+            tempo_volta = ((pista.comprimento * 60) / random.randint(velocidade_media_minima, velocidade_media))
             tempos_de_volta[carro.nome].append(tempo_volta)  # Adiciona o tempo da volta à lista
             
-            # Verifica se a volta foi a melhor
-            if tempo_volta < melhor_volta:
-                print(f"🏆 Melhor volta feita por {carro.nome} na volta {volta} com {tempo_volta:.2f} min!")
-                melhor_volta_carro = carro.nome
-                melhor_volta = tempo_volta
-
-    # Verifica carros que ainda estão na corrida
-    carros_ativos = [c for c in equipas if c.ativo]
-    if not carros_ativos:
-        print("🏁 Todos os carros abandonaram! Fim da corrida!")
-        return
+            # Guarda o tempo e o carro na volta correspondente
+            tempos_por_volta[volta].append((carro.nome, tempo_volta))
+        
+        if numero_voltas >= 30:
+            tempo = pit_stop()
+            print(f"Paragem de {tempo} para a {carro.nome}")
+            tempos_de_volta[carro.nome].append(tempo)
+    
+    
+        
+    if not campeonato:
+     for volta, tempos in tempos_por_volta.items():
+        for carro_nome, tempo in tempos:
+            # Verifica se é a melhor volta
+            if tempo < melhor_volta:
+                melhor_volta_carro = carro_nome
+                melhor_volta = tempo
+                mensagem += (f"🏆 Melhor volta feita por {carro_nome} na volta {volta} com {formatar_tempo(tempo)}\n")
+    
+     # Verifica carros que ainda estão na corrida
+    if campeonato or not campeonato:
+      carros_ativos = [c for c in equipas if c.ativo]
+      if not carros_ativos:
+         mensagem += ("🏁 Todos os carros abandonaram! Fim da corrida!\n")
+         return
 
     # Atribui pontos com base na posição
-    resultados = sorted(carros_ativos, key=lambda c: sum(tempos_de_volta[c.nome]))  # Ordena pelos tempos totais
-    for posicao, carro in enumerate(resultados):
+    if campeonato or not campeonato:
+     resultados = sorted(carros_ativos, key=lambda c: sum(tempos_de_volta[c.nome]))  # Ordena pelos tempos totais
+     for posicao, carro in enumerate(resultados):
         if posicao == 0:
-            carro.pontuacao += 12  # 1º lugar
+            carro.pontuacao = 12  # 1º lugar
+            carro.pontuacaoTotal += 12
         elif posicao == 1:
-            carro.pontuacao += 8   # 2º lugar
+            carro.pontuacao = 8   # 2º lugar
+            carro.pontuacaoTotal +=8
         elif posicao == 2:
-            carro.pontuacao += 5   # 3º lugar
+            carro.pontuacao = 5   # 3º lugar
+            carro.pontuacaoTotal +=5
         elif posicao == 3:
-            carro.pontuacao += 3   # 4º lugar
+            carro.pontuacao = 3   # 4º lugar
+            carro.pontuacaoTotal +=3
         elif posicao == 4:
-            carro.pontuacao += 1   # 5º lugar
+            carro.pontuacao = 1   # 5º lugar
+            carro.pontuacaoTotal +=1
 
     # Atribui bônus de 1 ponto para o carro com a melhor volta
     if melhor_volta_carro:
         for carro in equipas:
-            if carro.nome == melhor_volta_carro:
+            if carro.nome == melhor_volta_carro and carro.ativo:
                 carro.pontuacao += 1
 
     # Exibe a pontuação final
-    print("\n🏁 Pontuação Final:")
-    for carro in equipas:
-        print(f"{carro.nome}: {carro.pontuacao} pontos")
-
+    if not campeonato:
+     mensagem += (f"\n🏁 Pontuação Final Grande prémio {pista.nome}:\n")
+     for carro in equipas:
+        mensagem += (f"{carro.nome}: {carro.pontuacao} pontos ------ Tempo: {formatar_tempo(sum(tempos_de_volta[carro.nome]))}\n")
+    else:
+        mensagem += (f"\n🏁 Pontuação Final Grande prémio {pista.nome}:\n")
+        for carro in equipas:
+           mensagem += (f"{carro.nome}: {carro.pontuacao} pontos\n")
+           
+    return mensagem
 
 pistas = []
-qatar = Pista("Qatar", 5.38, 1, 0.005)
+qatar = Pista("Qatar", 5.38, 0.01, 0.005)
 monaco = Pista("Monaco", 3.34, 0.1, 0.01)
-spa = Pista("Spa-Francorchamps", 7, 0.05, 0.008)
-brasil = Pista("Brasil", 4.31, 0.2, 0.01)
+spa = Pista("Spa-Francorchamps", 7, 0.15, 0.008)
+brasil = Pista("Brasil", 4.31, 0.35, 0.01)
 pistas.append(qatar)
 pistas.append(monaco)
 pistas.append(spa)
 pistas.append(brasil)
 
-    
+ 
 equipa_escolhida = equipa()
 numero_pista = escolher_pista()
-pista = pistas[numero_pista]
 numero_voltas = numero_voltas()
 
-if pista != 0:
-    simular_corrida(equipa_escolhida, pista, numero_voltas)
+if numero_pista != 0:
+    pista = pistas[numero_pista-1]
+    campeonato = False
+    mensagem = simular_corrida(equipa_escolhida, pista, numero_voltas, mensagem, campeonato)
+    print(mensagem)
 else:
-    print("nada")
+    for i in pistas:
+      campeonato = True
+      mensagem += simular_corrida(equipa_escolhida, i, numero_voltas, "", campeonato) 
+    mensagem += ("\n🏁 Pontuação Final do campeonato:\n")
+    for carro in equipa_escolhida:
+          mensagem += (f"{carro.nome}: {carro.pontuacaoTotal} pontos\n")  
+    print(mensagem)
+    
+ficheiro = open('relatorio_corrida.txt', 'w')
+ficheiro.write(mensagem)
+ficheiro.close()
+        
     
 
 
-for i in equipa_escolhida:
-        print(i.nome)
