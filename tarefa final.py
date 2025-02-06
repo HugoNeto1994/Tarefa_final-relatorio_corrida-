@@ -430,7 +430,8 @@ else:
             mensagem += simular_corrida(equipa_escolhida, i, numero_voltas, "", campeonato) 
         mensagem += ("\n🏁 Pontuação Final do campeonato:\n")
         for carro in equipa_escolhida:
-          mensagem += (f"{carro.nome:<10} |Pontos: {carro.pontuacaoTotal<3}\n")  
+          pontuacaoT = carro.pontuacaoTotal
+          mensagem += (f"{carro.nome:<10} |Pontos: {pontuacaoT:<3}\n")  
         print(mensagem)
         imprimir_ficheiro(mensagem)
 
